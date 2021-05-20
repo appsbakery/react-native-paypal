@@ -102,31 +102,6 @@ RCT_EXPORT_METHOD(
     });
 }
 
-RCT_EXPORT_METHOD(
-    requestDeviceData:(NSString *)clientToken
-    resolve:(RCTPromiseResolveBlock)resolve
-    reject:(RCTPromiseRejectBlock)reject)
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        BTAPIClient* braintreeClient = [[BTAPIClient alloc] initWithAuthorization:clientToken];
-        if (braintreeClient == nil) {
-            NSError *error = [NSError errorWithDomain:@"RNPayPal" code:1 userInfo:nil];
-            reject(@"braintree_sdk_setup_failed", @"Could not initialize Braintree SDK", error);
-            return;
-        }
-
-        BTDataCollector *dataCollector = [[BTDataCollector alloc] initWithAPIClient:braintreeClient];
-        dataCollector.delegate = self;
-        [dataCollector collectCardFraudData:^(NSString * _Nonnull deviceData) {
-            NSDictionary* result = @{
-                @"deviceData" : deviceData,
-            };
-            resolve(result);
-        }];
-    });
-}
-
-
 
 RCT_EXPORT_METHOD(
     requestBillingAgreement:(NSString *)clientToken
@@ -224,7 +199,7 @@ RCT_EXPORT_METHOD(
 
 - (void)configure {
     NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-    NSString *urlscheme = [NSString stringWithFormat:@"%@.payments", bundleIdentifier];
+    NSString *urlscheme = [NSString stringWithFormat:@"%@.braintree", bundleIdentifier];
     URLScheme = urlscheme;
     [BTAppSwitch setReturnURLScheme:urlscheme];
 }
