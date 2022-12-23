@@ -1,4 +1,3 @@
-
 #import "RNPaypal.h"
 
 @implementation RNPaypal {
@@ -38,10 +37,8 @@ RCT_EXPORT_METHOD(
         }
 
         BTPayPalDriver *payPalDriver = [[BTPayPalDriver alloc] initWithAPIClient:braintreeClient];
-        payPalDriver.viewControllerPresentingDelegate = self;
-        payPalDriver.appSwitchDelegate = self;
 
-        BTPayPalRequest *request= [[BTPayPalRequest alloc] initWithAmount:options[@"amount"]];
+        BTPayPalCheckoutRequest *request= [[BTPayPalCheckoutRequest alloc] initWithAmount:options[@"amount"]];
         NSString* currency = options[@"currency"];
         if (currency) request.currencyCode = currency;
         NSString* displayName = options[@"displayName"];
@@ -59,45 +56,45 @@ RCT_EXPORT_METHOD(
             else if ([@"order" isEqualToString:intent])
                 request.intent = BTPayPalRequestIntentOrder;
         }
-
-        [payPalDriver requestOneTimePayment:request completion:^(BTPayPalAccountNonce * _Nullable tokenizedPayPalAccount, NSError * _Nullable error) {
-            if (tokenizedPayPalAccount) {
-                NSDictionary* result = @{
-                    @"nonce" : (tokenizedPayPalAccount.nonce ?: [NSNull null]),
-                    @"payerId" : (tokenizedPayPalAccount.payerId ?: [NSNull null]),
-                    @"email" : (tokenizedPayPalAccount.email ?: [NSNull null]),
-                    @"firstName" : (tokenizedPayPalAccount.firstName ?: [NSNull null]),
-                    @"lastName" : (tokenizedPayPalAccount.lastName ?: [NSNull null]),
-                    @"phone" : (tokenizedPayPalAccount.phone ?: [NSNull null]),
-                    @"billingAddress": @{
-                        @"recipientName" : (tokenizedPayPalAccount.billingAddress.recipientName ?: [NSNull null]),
-                        @"streetAddress" : (tokenizedPayPalAccount.billingAddress.streetAddress ?: [NSNull null]),
-                        @"extendedAddress" : (tokenizedPayPalAccount.billingAddress.extendedAddress ?: [NSNull null]),
-                        @"locality" : (tokenizedPayPalAccount.billingAddress.locality ?: [NSNull null]),
-                        @"countryCodeAlpha2" : (tokenizedPayPalAccount.billingAddress.countryCodeAlpha2 ?: [NSNull null]),
-                        @"postalCode" : (tokenizedPayPalAccount.billingAddress.postalCode ?: [NSNull null]),
-                        @"region" : (tokenizedPayPalAccount.billingAddress.region ?: [NSNull null]),
-                    },
-                    @"shippingAddress": @{
-                        @"recipientName" : (tokenizedPayPalAccount.shippingAddress.recipientName ?: [NSNull null]),
-                        @"streetAddress" : (tokenizedPayPalAccount.shippingAddress.streetAddress ?: [NSNull null]),
-                        @"extendedAddress" : (tokenizedPayPalAccount.shippingAddress.extendedAddress ?: [NSNull null]),
-                        @"locality" : (tokenizedPayPalAccount.shippingAddress.locality ?: [NSNull null]),
-                        @"countryCodeAlpha2" : (tokenizedPayPalAccount.shippingAddress.countryCodeAlpha2 ?: [NSNull null]),
-                        @"postalCode" : (tokenizedPayPalAccount.shippingAddress.postalCode ?: [NSNull null]),
-                        @"region" : (tokenizedPayPalAccount.shippingAddress.region ?: [NSNull null]),
-                    },
-                };
-
-                resolve(result);
-                return;
-            } else if (error) {
-                reject(@"request_one_time_payment_error", @"Error requesting one time payment", error);
-                return;
-            } else {
-                NSError* e = [NSError errorWithDomain:@"RNPayPal" code:2 userInfo:nil];
-                reject(@"user_cancellation", @"User cancelled one time payment", e);
-            }
+        
+        [payPalDriver tokenizePayPalAccountWithPayPalRequest:request completion:^(BTPayPalAccountNonce * _Nullable tokenizedPayPalAccount, NSError * _Nullable error) {
+                if (tokenizedPayPalAccount) {
+                    NSDictionary* result = @{
+                        @"nonce" : (tokenizedPayPalAccount.nonce ?: [NSNull null]),
+                        @"payerId" : (tokenizedPayPalAccount.payerID?: [NSNull null]),
+                        @"email" : (tokenizedPayPalAccount.email ?: [NSNull null]),
+                        @"firstName" : (tokenizedPayPalAccount.firstName ?: [NSNull null]),
+                        @"lastName" : (tokenizedPayPalAccount.lastName ?: [NSNull null]),
+                        @"phone" : (tokenizedPayPalAccount.phone ?: [NSNull null]),
+                        @"billingAddress": @{
+                            @"recipientName" : (tokenizedPayPalAccount.billingAddress.recipientName ?: [NSNull null]),
+                            @"streetAddress" : (tokenizedPayPalAccount.billingAddress.streetAddress ?: [NSNull null]),
+                            @"extendedAddress" : (tokenizedPayPalAccount.billingAddress.extendedAddress ?: [NSNull null]),
+                            @"locality" : (tokenizedPayPalAccount.billingAddress.locality ?: [NSNull null]),
+                            @"countryCodeAlpha2" : (tokenizedPayPalAccount.billingAddress.countryCodeAlpha2 ?: [NSNull null]),
+                            @"postalCode" : (tokenizedPayPalAccount.billingAddress.postalCode ?: [NSNull null]),
+                            @"region" : (tokenizedPayPalAccount.billingAddress.region ?: [NSNull null]),
+                        },
+                        @"shippingAddress": @{
+                            @"recipientName" : (tokenizedPayPalAccount.shippingAddress.recipientName ?: [NSNull null]),
+                            @"streetAddress" : (tokenizedPayPalAccount.shippingAddress.streetAddress ?: [NSNull null]),
+                            @"extendedAddress" : (tokenizedPayPalAccount.shippingAddress.extendedAddress ?: [NSNull null]),
+                            @"locality" : (tokenizedPayPalAccount.shippingAddress.locality ?: [NSNull null]),
+                            @"countryCodeAlpha2" : (tokenizedPayPalAccount.shippingAddress.countryCodeAlpha2 ?: [NSNull null]),
+                            @"postalCode" : (tokenizedPayPalAccount.shippingAddress.postalCode ?: [NSNull null]),
+                            @"region" : (tokenizedPayPalAccount.shippingAddress.region ?: [NSNull null]),
+                        },
+                    };
+    
+                    resolve(result);
+                    return;
+                } else if (error) {
+                    reject(@"request_one_time_payment_error", @"Error requesting one time payment", error);
+                    return;
+                } else {
+                    NSError* e = [NSError errorWithDomain:@"RNPayPal" code:2 userInfo:nil];
+                    reject(@"user_cancellation", @"User cancelled one time payment", e);
+                }
         }];
     });
 }
@@ -117,27 +114,17 @@ RCT_EXPORT_METHOD(
             return;
         }
 
-        if (options[@"billingAgreementDescription"] == nil) {
-            NSError *error = [NSError errorWithDomain:@"RNPayPal" code:1 userInfo:nil];
-            reject(@"braintree_sdk_setup_failed", @"billingAgreementDescription prop is required", error);
-            return;
-        }
-
         BTPayPalDriver *payPalDriver = [[BTPayPalDriver alloc] initWithAPIClient:braintreeClient];
-        payPalDriver.viewControllerPresentingDelegate = self;
-        payPalDriver.appSwitchDelegate = self;
-
-        BTPayPalRequest *request = [[BTPayPalRequest alloc] initWithAmount:options[@"billingAgreementDescription"]];
-        NSString* currency = options[@"currency"];
-        if (currency) request.currencyCode = currency;
+        BTPayPalVaultRequest *request = [BTPayPalVaultRequest alloc];
         NSString* localeCode = options[@"localeCode"];
         if (localeCode) request.localeCode = localeCode;
-
-        [payPalDriver requestBillingAgreement:request completion:^(BTPayPalAccountNonce * _Nullable tokenizedPayPalAccount, NSError * _Nullable error) {
+        
+        [payPalDriver tokenizePayPalAccountWithPayPalRequest:request completion:^(BTPayPalAccountNonce * _Nullable tokenizedPayPalAccount, NSError * _Nullable error) {
+            
             if (tokenizedPayPalAccount) {
                 NSDictionary* result = @{
                     @"nonce" : (tokenizedPayPalAccount.nonce ?: [NSNull null]),
-                    @"payerId" : (tokenizedPayPalAccount.payerId ?: [NSNull null]),
+                    @"payerId" : (tokenizedPayPalAccount.payerID ?: [NSNull null]),
                     @"email" : (tokenizedPayPalAccount.email ?: [NSNull null]),
                     @"firstName" : (tokenizedPayPalAccount.firstName ?: [NSNull null]),
                     @"lastName" : (tokenizedPayPalAccount.lastName ?: [NSNull null]),
@@ -161,7 +148,6 @@ RCT_EXPORT_METHOD(
                         @"region" : (tokenizedPayPalAccount.shippingAddress.region ?: [NSNull null]),
                     },
                 };
-
                 resolve(result);
                 return;
             } else if (error) {
@@ -182,7 +168,7 @@ RCT_EXPORT_METHOD(
     annotation:(id)annotation
 {
     if ([url.scheme localizedCaseInsensitiveCompare:URLScheme] == NSOrderedSame) {
-        return [BTAppSwitch handleOpenURL:url sourceApplication:sourceApplication];
+        return [BTAppContextSwitcher handleOpenURL:url];
     }
     return NO;
 }
@@ -192,16 +178,14 @@ RCT_EXPORT_METHOD(
     options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
 {
     if ([url.scheme localizedCaseInsensitiveCompare:URLScheme] == NSOrderedSame) {
-        return [BTAppSwitch handleOpenURL:url options:options];
+        return [BTAppContextSwitcher handleOpenURL:url];
     }
     return NO;
 }
 
 - (void)configure {
     NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-    NSString *urlscheme = [NSString stringWithFormat:@"%@.braintree", bundleIdentifier];
-    URLScheme = urlscheme;
-    [BTAppSwitch setReturnURLScheme:urlscheme];
+    [BTAppContextSwitcher setReturnURLScheme:[NSString stringWithFormat:@"%@.braintree", bundleIdentifier]];
 }
 
 - (void)paymentDriver:(__unused id)driver requestsPresentationOfViewController:(UIViewController *)viewController {
